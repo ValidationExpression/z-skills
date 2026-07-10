@@ -27,11 +27,30 @@ warnings.filterwarnings(
 
 import requests
 
-PROJECT_ROOT = Path(__file__).resolve().parents[4]
+
+def discover_project_root(script_path: Path, *, cwd: Path | None = None) -> Path:
+    override = os.environ.get("ZHANGAI_ROOT", "").strip()
+    if override:
+        return Path(override).expanduser().resolve()
+    resolved_script = script_path.resolve()
+    for parent in resolved_script.parents:
+        if parent.name == ".agent":
+            return parent.parent
+        if parent.name == "z-skills":
+            return parent.parent
+    current = Path(cwd or Path.cwd()).expanduser()
+    for candidate in (current, *current.parents):
+        if (candidate / ".agent" / "skills").is_dir() or (candidate / "z-skills").is_dir():
+            return candidate
+    return current
+
+
+PROJECT_ROOT = discover_project_root(Path(__file__))
 DEFAULT_OUT_ROOT = PROJECT_ROOT / "Video" / "Downloads"
+_YTDLP_ON_PATH = shutil.which("yt-dlp")
 YTDLP_CANDIDATES = [
+    *([Path(_YTDLP_ON_PATH)] if _YTDLP_ON_PATH else []),
     Path("/Users/zz/miniconda3/bin/yt-dlp"),
-    Path(shutil.which("yt-dlp") or ""),
 ]
 DEFAULT_USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -94,9 +113,76 @@ def make_run_dir(out_root: Path, title: str) -> Path:
 
 def find_ytdlp() -> Path | None:
     for candidate in YTDLP_CANDIDATES:
-        if candidate and candidate.exists() and os.access(candidate, os.X_OK):
+        if candidate.is_file() and os.access(candidate, os.X_OK):
             return candidate
     return None
+
+
+def _clean_input_url(value: str) -> str:
+    url = str(value or "").strip().strip("<>")
+    if re.search(r"[\s\x00-\x1f]", url):
+        raise ValueError("Unsafe video URL: whitespace or control characters are not allowed")
+    parsed = urlparse(url)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise ValueError(f"Unsupported video URL: {url or '<empty>'}")
+    if parsed.username is not None or parsed.password is not None:
+        raise ValueError("Unsafe video URL: embedded credentials are not allowed")
+    return url
+
+
+def _urls_from_text_file(path: Path) -> list[str]:
+    urls: list[str] = []
+    for raw_line in path.expanduser().read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith(("#", ";")):
+            continue
+        urls.append(line)
+    return urls
+
+
+def _urls_from_inventory(path: Path) -> list[str]:
+    lines = path.expanduser().read_text(encoding="utf-8").splitlines()
+    source_index = -1
+    urls: list[str] = []
+    for line in lines:
+        if not line.lstrip().startswith("|"):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if "Source URL" in cells:
+            source_index = cells.index("Source URL")
+            continue
+        if source_index < 0 or source_index >= len(cells):
+            continue
+        value = cells[source_index].strip().strip("<>").strip("`")
+        if value.startswith(("http://", "https://")):
+            urls.append(value)
+    return urls
+
+
+def collect_input_urls(
+    positional_urls: list[str],
+    *,
+    url_files: list[Path],
+    inventories: list[Path],
+) -> list[str]:
+    candidates = list(positional_urls)
+    for path in url_files:
+        candidates.extend(_urls_from_text_file(Path(path)))
+    for path in inventories:
+        candidates.extend(_urls_from_inventory(Path(path)))
+
+    urls: list[str] = []
+    seen: set[str] = set()
+    for value in candidates:
+        if not str(value or "").strip():
+            continue
+        url = _clean_input_url(value)
+        if url not in seen:
+            seen.add(url)
+            urls.append(url)
+    if not urls:
+        raise ValueError("No valid video URLs were provided")
+    return urls
 
 
 def classify_url(url: str) -> str:
@@ -256,12 +342,15 @@ def download_youtube_invidious_fallback(
             if response.status_code != 206 or not first_bytes.startswith(b"\x00\x00\x00"):
                 raise RuntimeError(f"invidious-probe-failed:{response.status_code}")
             total = parse_content_range_total(response.headers.get("Content-Range", ""))
+            if total <= 0:
+                raise RuntimeError("content-range-total-missing")
             limit = int(max_video_mb * 1024 * 1024)
             if total and total > limit:
                 record["note"] = f"invidious-video-larger-than-{max_video_mb:g}MB"
                 return record
 
-            with open(target, "wb") as handle:
+            partial = Path(str(target) + ".part")
+            with open(partial, "wb") as handle:
                 handle.write(first_bytes)
             written = len(first_bytes)
             start = written
@@ -299,14 +388,20 @@ def download_youtube_invidious_fallback(
                         if attempt == 7:
                             raise
                         time.sleep(min(10, attempt * 1.5))
-                with open(target, "ab") as handle:
+                with open(partial, "ab") as handle:
                     handle.write(chunk)
                 written += len(chunk)
                 if written > limit:
-                    target.unlink(missing_ok=True)
+                    partial.unlink(missing_ok=True)
                     record["note"] = f"invidious-video-larger-than-{max_video_mb:g}MB"
                     return record
                 start = end + 1
+
+            if partial.stat().st_size != total:
+                raise RuntimeError(
+                    f"invidious-size-mismatch:{partial.stat().st_size}!={total}"
+                )
+            partial.replace(target)
 
             record["status"] = "ok"
             record["files"] = [str(target)]
@@ -368,6 +463,7 @@ def download_direct_video(
     timeout: int = 30,
 ) -> dict[str, Any]:
     record = base_record(url, "direct")
+    partial: Path | None = None
     try:
         headers = {"User-Agent": DEFAULT_USER_AGENT}
         if referer:
@@ -399,26 +495,67 @@ def download_direct_video(
         if Path(filename).suffix.lower() not in VIDEO_EXTENSIONS:
             filename = f"{Path(filename).stem}{ext}"
         target = unique_path(out_dir / filename)
+        partial = Path(str(target) + ".part")
 
-        size = 0
-        with open(target, "wb") as handle:
-            for chunk in response.iter_content(1024 * 256):
+        resume_from = partial.stat().st_size if partial.exists() else 0
+        mode = "wb"
+        expected_total = 0
+        if resume_from:
+            response.close()
+            range_headers = dict(headers)
+            range_headers["Range"] = f"bytes={resume_from}-"
+            response = session.get(
+                url,
+                timeout=timeout,
+                stream=True,
+                headers=range_headers,
+            )
+            response.raise_for_status()
+            if response.status_code == 206:
+                content_range = response.headers.get("Content-Range", "")
+                match = re.fullmatch(r"bytes (\d+)-(\d+)/(\d+)", content_range)
+                if not match or int(match.group(1)) != resume_from:
+                    raise RuntimeError("invalid-content-range-for-resume")
+                expected_total = int(match.group(3))
+                mode = "ab"
+            else:
+                resume_from = 0
+
+        length = response.headers.get("Content-Length")
+        if not expected_total and length:
+            try:
+                expected_total = resume_from + int(length)
+            except ValueError:
+                expected_total = 0
+        if expected_total and expected_total > limit:
+            record["note"] = f"video-larger-than-{max_video_mb:g}MB"
+            return record
+
+        size = resume_from
+        with open(partial, mode) as handle:
+            for chunk in response.iter_content(1024 * 16):
                 if not chunk:
                     continue
                 size += len(chunk)
                 if size > limit:
                     handle.close()
-                    target.unlink(missing_ok=True)
+                    partial.unlink(missing_ok=True)
                     record["note"] = f"video-larger-than-{max_video_mb:g}MB"
                     return record
                 handle.write(chunk)
+
+        if expected_total and size != expected_total:
+            record["note"] = f"incomplete-download:{size}!={expected_total} | partial={partial}"
+            return record
+        partial.replace(target)
 
         record["status"] = "ok"
         record["files"] = [str(target)]
         record["bytes"] = size
         return record
     except Exception as exc:  # noqa: BLE001
-        record["note"] = str(exc)[:300]
+        partial_note = f" | partial={partial}" if partial is not None and partial.exists() else ""
+        record["note"] = (str(exc) + partial_note)[:300]
         return record
 
 
@@ -441,6 +578,8 @@ def format_selector(quality: str) -> str:
         height = int(quality)
     except ValueError as exc:
         raise ValueError("--quality must be an integer height like 1080 or 'best'") from exc
+    if height <= 0:
+        raise ValueError("--quality height must be positive")
     return f"bv*[height<={height}]+ba/b[height<={height}]/b"
 
 
@@ -456,10 +595,26 @@ def build_ytdlp_cmd(
     playlist: bool = False,
     write_info_json: bool = True,
     trim_filenames: int = 150,
+    subtitles: bool = False,
+    subtitle_langs: str = "zh.*,en.*",
+    embed_thumbnail: bool = False,
+    download_archive: str = "",
+    concurrent_fragments: int = 4,
 ) -> list[str]:
     template = str(out_dir / "%(title).150B [%(id)s].%(ext)s")
     cmd = [
         str(ytdlp),
+        "--ignore-config",
+        "--continue",
+        "--part",
+        "--retries",
+        "10",
+        "--fragment-retries",
+        "10",
+        "--retry-sleep",
+        "fragment:exp=1:20",
+        "--concurrent-fragments",
+        str(concurrent_fragments),
         "--no-progress",
         "--print",
         "after_move:filepath",
@@ -469,7 +624,7 @@ def build_ytdlp_cmd(
         "--trim-filenames",
         str(trim_filenames),
         "--max-filesize",
-        f"{int(max_video_mb)}M",
+        str(int(max_video_mb * 1024 * 1024)),
         "-f",
         format_selector(quality),
         "-o",
@@ -478,6 +633,19 @@ def build_ytdlp_cmd(
     ]
     if write_info_json:
         cmd.insert(1, "--write-info-json")
+    if subtitles:
+        cmd[1:1] = [
+            "--write-subs",
+            "--write-auto-subs",
+            "--sub-langs",
+            subtitle_langs,
+            "--convert-subs",
+            "srt",
+        ]
+    if embed_thumbnail:
+        cmd.insert(1, "--embed-thumbnail")
+    if download_archive:
+        cmd[1:1] = ["--download-archive", str(Path(download_archive).expanduser())]
     if playlist:
         cmd.insert(1, "--yes-playlist")
     else:
@@ -537,6 +705,10 @@ def download_with_ytdlp(
     browser_cookies: str = "",
     playlist: bool = False,
     timeout: int = 3600,
+    subtitles: bool = False,
+    subtitle_langs: str = "zh.*,en.*",
+    embed_thumbnail: bool = False,
+    download_archive: str = "",
 ) -> dict[str, Any]:
     kind = "stream" if classify_url(url) == "stream" else "platform"
     record = base_record(url, kind)
@@ -549,6 +721,10 @@ def download_with_ytdlp(
         cookies_file=cookies_file,
         browser_cookies=browser_cookies,
         playlist=playlist,
+        subtitles=subtitles,
+        subtitle_langs=subtitle_langs,
+        embed_thumbnail=embed_thumbnail,
+        download_archive=download_archive,
     )
     try:
         before = {str(path) for path in out_dir.iterdir()}
@@ -572,7 +748,21 @@ def download_with_ytdlp(
             record["bytes"] = sum(Path(path).stat().st_size for path in files)
             return record
 
-        tail = (proc.stderr or proc.stdout or "").strip().splitlines()
+        diagnostic = "\n".join(part for part in (proc.stdout, proc.stderr) if part).strip()
+        archive_markers = (
+            "has already been recorded in the archive",
+            "has already been downloaded",
+        )
+        if proc.returncode == 0 and any(marker in diagnostic.lower() for marker in archive_markers):
+            record["status"] = "skipped"
+            record["note"] = "already present in download archive"
+            return record
+        if proc.returncode == 0 and not files and download_archive:
+            record["status"] = "skipped"
+            record["note"] = "no new file; treated as already present in download archive"
+            return record
+
+        tail = diagnostic.splitlines()
         record["note"] = (tail[-1] if tail else f"yt-dlp-exit-{proc.returncode}")[:300]
         if likely_cookie_fix(record["note"]) and not (cookies_file or browser_cookies):
             record["note"] += " | 可用 --cookies-file cookies.txt 重试"
@@ -599,6 +789,10 @@ def download_one(
     prefer_ytdlp: bool,
     invidious_fallback: bool,
     timeout: int,
+    subtitles: bool = False,
+    subtitle_langs: str = "zh.*,en.*",
+    embed_thumbnail: bool = False,
+    download_archive: str = "",
 ) -> dict[str, Any]:
     kind = classify_url(url)
     if kind == "direct" and not prefer_ytdlp:
@@ -626,12 +820,17 @@ def download_one(
         browser_cookies=browser_cookies,
         playlist=playlist,
         timeout=timeout,
+        subtitles=subtitles,
+        subtitle_langs=subtitle_langs,
+        embed_thumbnail=embed_thumbnail,
+        download_archive=download_archive,
     )
     if (
         record["status"] != "ok"
         and invidious_fallback
         and is_youtube_url(url)
         and likely_cookie_fix(record.get("note", ""))
+        and not (cookies_file or browser_cookies)
     ):
         fallback_record = download_youtube_invidious_fallback(
             session,
@@ -664,13 +863,16 @@ def write_reports(out_dir: Path, urls: list[str], records: list[dict[str, Any]])
     )
 
     ok_count = sum(1 for record in records if record["status"] == "ok")
+    skipped_count = sum(1 for record in records if record["status"] == "skipped")
+    failed_count = len(records) - ok_count - skipped_count
     lines = [
         "# 视频下载报告",
         "",
         f"- 输出目录：`{out_dir}`",
         f"- 链接数量：{len(records)}",
         f"- 成功：{ok_count}",
-        f"- 失败：{len(records) - ok_count}",
+        f"- 已跳过：{skipped_count}",
+        f"- 失败：{failed_count}",
         "",
         "| 状态 | 类型 | 平台 | 文件 | 大小 | 链接 | 备注 |",
         "| --- | --- | --- | --- | --- | --- | --- |",
@@ -701,8 +903,21 @@ def escape_table(value: Any) -> str:
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Download videos from direct URLs and yt-dlp platforms.")
-    parser.add_argument("urls", nargs="+", help="Video URLs")
+    parser.add_argument("urls", nargs="*", help="Video URLs")
+    parser.add_argument(
+        "--url-file",
+        action="append",
+        default=[],
+        help="Text file containing one video URL per line; repeatable",
+    )
+    parser.add_argument(
+        "--inventory",
+        action="append",
+        default=[],
+        help="04-media-inventory.md produced by z-web-pack; repeatable",
+    )
     parser.add_argument("--out-root", default=str(DEFAULT_OUT_ROOT), help="Output root directory")
+    parser.add_argument("--run-dir", default="", help="Reuse an existing run directory, including .part files")
     parser.add_argument("--title", default="", help="Run title used in output folder name")
     parser.add_argument("--quality", default="1080", help="Max video height, e.g. 720/1080, or best")
     parser.add_argument("--max-video-mb", type=float, default=2000.0, help="Per video size limit")
@@ -711,27 +926,50 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--playlist", action="store_true", help="Allow playlist downloads")
     parser.add_argument("--prefer-ytdlp", action="store_true", help="Use yt-dlp even for direct video URLs")
     parser.add_argument("--no-invidious-fallback", action="store_true", help="Disable YouTube Invidious proxy fallback")
+    parser.add_argument("--subtitles", action="store_true", help="Download manual and automatic subtitles")
+    parser.add_argument("--sub-langs", default="zh.*,en.*", help="Subtitle languages passed to yt-dlp")
+    parser.add_argument("--embed-thumbnail", action="store_true", help="Embed the video thumbnail when supported")
+    parser.add_argument("--download-archive", default="", help="yt-dlp archive file for skipping prior downloads")
     parser.add_argument("--timeout", type=int, default=3600, help="yt-dlp timeout in seconds")
     return parser.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv or sys.argv[1:])
+    try:
+        urls = collect_input_urls(
+            args.urls,
+            url_files=[Path(path).expanduser() for path in args.url_file],
+            inventories=[Path(path).expanduser() for path in args.inventory],
+        )
+    except (OSError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    if args.max_video_mb <= 0 or args.timeout <= 0:
+        print("error: --max-video-mb and --timeout must be positive", file=sys.stderr)
+        return 1
+    try:
+        format_selector(args.quality)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    if args.cookies_file:
+        cookie_path = Path(args.cookies_file).expanduser()
+        if not cookie_path.is_file():
+            print(f"error: cookies file not found: {cookie_path}", file=sys.stderr)
+            return 1
+
     out_root = Path(args.out_root).expanduser()
-    title = args.title or platform_name(args.urls[0]).lower()
-    out_dir = make_run_dir(out_root, title)
+    title = args.title or platform_name(urls[0]).lower()
+    if args.run_dir:
+        out_dir = Path(args.run_dir).expanduser()
+        out_dir.mkdir(parents=True, exist_ok=True)
+    else:
+        out_dir = make_run_dir(out_root, title)
 
     ytdlp = find_ytdlp()
     session = requests.Session()
     session.headers.update({"User-Agent": DEFAULT_USER_AGENT})
-
-    seen: set[str] = set()
-    urls: list[str] = []
-    for url in args.urls:
-        normalized = url.strip()
-        if normalized and normalized not in seen:
-            seen.add(normalized)
-            urls.append(normalized)
 
     records: list[dict[str, Any]] = []
     for index, url in enumerate(urls, start=1):
@@ -749,6 +987,10 @@ def main(argv: list[str] | None = None) -> int:
             prefer_ytdlp=args.prefer_ytdlp,
             invidious_fallback=not args.no_invidious_fallback,
             timeout=args.timeout,
+            subtitles=args.subtitles,
+            subtitle_langs=args.sub_langs,
+            embed_thumbnail=args.embed_thumbnail,
+            download_archive=args.download_archive,
         )
         records.append(record)
         status = record["status"]
@@ -757,12 +999,15 @@ def main(argv: list[str] | None = None) -> int:
 
     write_reports(out_dir, urls, records)
     ok_count = sum(1 for record in records if record["status"] == "ok")
+    skipped_count = sum(1 for record in records if record["status"] == "skipped")
+    failed_count = len(records) - ok_count - skipped_count
     print(out_dir)
     print(f"videos_ok={ok_count}")
-    print(f"videos_failed={len(records) - ok_count}")
-    if ok_count == len(records):
+    print(f"videos_skipped={skipped_count}")
+    print(f"videos_failed={failed_count}")
+    if ok_count + skipped_count == len(records):
         return 0
-    if ok_count == 0:
+    if ok_count + skipped_count == 0:
         return 1
     return 2
 

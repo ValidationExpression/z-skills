@@ -5,19 +5,36 @@
       "id": 1,
       "prompt": "帮我下载这个 YouTube 视频：https://www.youtube.com/watch?v=BaW_jenozKc",
       "expected_output": "使用 z-video-downloader，默认单视频 1080p 下载，输出 Video/Downloads 下的目录和 download-report.md。",
-      "files": []
+      "files": [],
+      "assertions": ["默认单视频模式", "输出下载报告", "失败时给出可执行的恢复提示"]
     },
     {
       "id": 2,
       "prompt": "这个 B 站视频帮我保存到本地：https://www.bilibili.com/video/BV1xx411c7mD",
       "expected_output": "使用 z-video-downloader 调用 yt-dlp 下载 Bilibili 视频；若遇到 412 或登录限制，提示并使用 --cookies-file cookies/cookies.txt 重试。",
-      "files": []
+      "files": [],
+      "assertions": ["使用 yt-dlp", "默认不下载整个播放列表", "风控失败时提示 cookies.txt"]
     },
     {
       "id": 3,
       "prompt": "把这个 mp4 直链下载下来，文件别乱放：https://example.com/video.mp4",
       "expected_output": "使用 z-video-downloader 的直链流式下载能力，保存到 Video/Downloads/YYYY-MM-DD-主题，并生成报告。",
-      "files": []
+      "files": [],
+      "assertions": ["直链使用流式下载", "中断时保留 .part", "完成后生成下载报告"]
+    },
+    {
+      "id": 4,
+      "prompt": "把这个资料包 04-media-inventory.md 里的视频都下载下来，重复的跳过。",
+      "expected_output": "使用 --inventory 读取媒体清单，保持顺序去重，并逐条写入统一下载报告。",
+      "files": [],
+      "assertions": ["直接读取媒体清单", "重复链接只处理一次", "保留逐条成功失败记录"]
+    },
+    {
+      "id": 5,
+      "prompt": "下载这个 YouTube 视频，顺便要中英文字幕和封面，以后重复执行不要再下。",
+      "expected_output": "启用字幕、字幕语言、封面和下载历史参数，并保留 1080p 默认画质。",
+      "files": [],
+      "assertions": ["启用中英文字幕", "启用封面嵌入", "使用下载历史避免重复"]
     }
   ]
 }

@@ -655,11 +655,13 @@ def write_inventory(
 ) -> None:
     now = dt.datetime.now().isoformat(timespec="seconds")
     ok_pages = [page for page in pages if page.status == "ok"]
-    linked_ok = [page for page in ok_pages if page.role == "LINKED"]
-    main_ok = [page for page in ok_pages if page.role == "MAIN"]
+    restricted_pages = [page for page in pages if page.status == "restricted"]
+    available_pages = [page for page in pages if page.status in {"ok", "restricted"}]
+    linked_ok = [page for page in available_pages if page.role == "LINKED"]
+    main_ok = [page for page in available_pages if page.role == "MAIN"]
     images = [img | {"page": page.title} for page in pages for img in page.images]
     fallback_pages = [page for page in pages if "r.jina.ai" in page.final_url or "used-r.jina.ai" in page.error]
-    failed_pages = [page for page in pages if page.status != "ok"]
+    failed_pages = [page for page in pages if page.status not in {"ok", "restricted"}]
 
     readme = [
         f"# {title}",
@@ -670,6 +672,7 @@ def write_inventory(
         f"- Pages captured: {len(ok_pages)}",
         f"- Main pages: {len(main_ok)}",
         f"- Linked pages: {len(linked_ok)}",
+        f"- Restricted pages: {len(restricted_pages)}",
         f"- Images saved: {sum(1 for img in images if img.get('status') == 'ok')}",
         f"- Max depth: {max_depth}",
         f"- Max pages: {max_pages}",
@@ -694,6 +697,7 @@ def write_inventory(
         "",
         f"- Main pages captured: {len(main_ok)}",
         f"- Linked pages captured: {len(linked_ok)}",
+        f"- Restricted pages: {len(restricted_pages)}",
         f"- Images saved: {sum(1 for img in images if img.get('status') == 'ok')}",
         f"- Failed pages: {len(failed_pages)}",
         f"- Skipped queued links: {len(skipped_queue)}",
@@ -704,8 +708,10 @@ def write_inventory(
     ]
     for page in main_ok + linked_ok:
         brief.append(f"- `{page.filename}` - {page.title}")
-    if failed_pages or skipped_queue:
+    if restricted_pages or failed_pages or skipped_queue:
         brief.extend(["", "## Caveats", ""])
+        for page in restricted_pages:
+            brief.append(f"- Restricted: {page.url} ({page.error})")
         for page in failed_pages:
             brief.append(f"- Failed: {page.url} ({page.error})")
         for item in skipped_queue[:50]:
@@ -784,6 +790,9 @@ def write_inventory(
     if fallback_pages:
         reading_map.extend(["", "## Jina Fallback", ""])
         reading_map.extend([f"- `{page.filename}` - {page.url}" for page in fallback_pages])
+    if restricted_pages:
+        reading_map.extend(["", "## Restricted", ""])
+        reading_map.extend([f"- `{page.filename}` - {page.url}: {page.error}" for page in restricted_pages])
     if failed_pages:
         reading_map.extend(["", "## Failed", ""])
         reading_map.extend([f"- {page.url}: {page.error}" for page in failed_pages])

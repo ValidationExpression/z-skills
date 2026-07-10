@@ -21,9 +21,9 @@
 
 ## z-web-pack 与 z-video-downloader 边界
 
-`z-web-pack` 负责网页素材包采集，包含正文、正文相关链接、图片、本地阅读地图和媒体链接清单
+`z-web-pack` 负责网页素材包采集，包含正文、正文相关链接、图片、本地阅读地图、媒体链接清单，以及受限来源恢复说明
 
-`z-video-downloader` 负责视频下载，包含 YouTube、Bilibili、Vimeo、X/Twitter、TikTok、抖音、Instagram、Facebook、m3u8 和常见视频直链
+`z-video-downloader` 负责视频下载，包含 YouTube、Bilibili、Vimeo、X/Twitter、TikTok、抖音、Instagram、Facebook、m3u8 和常见视频直链，并支持断点续传、批量清单、字幕、封面和下载历史
 
 `z-web-pack` 发现视频时只写入 `04-media-inventory.md`。如果要把视频保存到本地，把清单中的 Source URL 交给 `z-video-downloader`
 
@@ -33,8 +33,8 @@
 /Users/zz/miniconda3/bin/python3 z-web-pack/scripts/collect_web_pack.py \
   --out-root "/Users/zz/Library/Mobile Documents/iCloud~md~obsidian/Documents/zhangAI/Clippings/Reading" \
   --title "主题名" \
-  --max-depth 1 \
-  --max-pages 80 \
+  --max-depth 0 \
+  --max-pages 1 \
   "https://example.com/article"
 ```
 
@@ -56,6 +56,13 @@
 ```
 
 如果视频链接来自网页素材包，使用 `04-media-inventory.md` 里的 Source URL
+
+也可以直接读取媒体清单：
+
+```bash
+/Users/zz/miniconda3/bin/python3 z-video-downloader/scripts/download_video.py \
+  --inventory "/path/to/04-media-inventory.md"
+```
 
 ## 推荐安装方式
 
@@ -124,6 +131,8 @@ z-xkcd-panda-comic/assets/reference-codex-computer-housekeeper-panda-comic.png
 - 网页素材采集和视频下载分开维护，降低单个 skill 的复杂度
 - 视频平台风控、cookie、画质、播放列表等逻辑统一放在 `z-video-downloader`
 - `z-web-pack` 的媒体清单只做发现和转交提示，避免采集资料时意外下载大文件
+- 单篇新闻默认使用保守采集模式；遇到付费墙或验证码时保留受限说明，再补公开来源
+- 视频下载支持 `.part` 续传；输入无效时会在创建空目录前停止
 
 ## 目录结构
 

@@ -1,6 +1,6 @@
 ---
 name: 1-web-pack
-description: 当用户提供一个或多个同主题网页链接，并要求“采集网页素材”“把链接正文拿到本地”“正文相关链接也下载”“配图保存到本地”“做成备用写作素材包”“1-web-pack”时必须使用。会逐个阅读入口链接正文和正文内相关链接，排除侧边栏、页脚、广告、社交分享等低价值区域，把 Markdown、链接清单、阅读地图、图片和视频链接清单保存到 Clippings/Reading；支持懒加载图片、srcset 高清档、防盗链 Referer；发现视频链接只记录到 04-media-inventory.md，下载视频请使用 z-video-downloader；常规抓取失败后才允许使用 r.jina.ai 兜底。
+description: 当用户提供一个或多个同主题网页链接，并要求“采集网页素材”“把链接正文拿到本地”“正文相关链接也下载”“配图保存到本地”“做成备用写作素材包”“1-web-pack”“z-web-pack”时必须使用。会逐个阅读入口链接正文和正文内高价值相关链接，过滤导航、页脚、广告和社交分享，把 Markdown、链接清单、阅读地图、图片及视频链接清单保存到 Clippings/Reading；支持懒加载图片、srcset 高清档、防盗链 Referer、受限来源说明与公开支持来源补充；发现视频链接只登记到 04-media-inventory.md，下载交给 z-video-downloader；常规抓取失败后才使用 r.jina.ai 兜底。
 ---
 
 # 网页素材包采集
@@ -30,6 +30,7 @@ YYYY-MM-DD-主题名/
 ├── 02-image-inventory.md
 ├── 03-reading-map.md
 ├── 04-media-inventory.md
+├── 05-access-notes.md（存在受限来源时生成）
 ├── MAIN-01-入口正文.md
 ├── LINKED-02-正文相关链接.md
 └── assets/
@@ -37,7 +38,7 @@ YYYY-MM-DD-主题名/
 
 ## 完成标准
 
-1. 每个用户入口链接都要生成 `MAIN-*.md`
+1. 每个用户入口链接都要生成 `MAIN-*.md`；受限来源也要生成清楚的受限说明，不能只留下空壳
 2. 入口正文里的相关链接要尽量展开成 `LINKED-*.md`
 3. 只采正文、正文表格、正文图片、正文代码和正文里的相关链接
 4. 跳过侧边栏、页脚、广告、登录、订阅、招聘、隐私政策、服务条款、社交分享链接
@@ -46,15 +47,29 @@ YYYY-MM-DD-主题名/
 7. 生成 `README.md`、`00-research-brief.md`、`01-link-inventory.md`、`02-image-inventory.md`、`03-reading-map.md`、`04-media-inventory.md`
 8. 记录失败、受限、跳过和兜底情况
 9. 收尾检查不得留下非 `r2blog.zhanglearning.com` / `r2.zhanglearning.com` 的外链图片；如果留下，必须调用 `1-upload-images-to-picgo`
+10. `pages_restricted` 大于 0 时，继续寻找公开转载、官方材料或可信二次报道，至少补入一条成功保存的 `--support-url`
 
 ## 推荐命令
+
+单篇文章先采用保守模式，避免新闻站导航链接污染资料包：
+
+```bash
+/Users/zz/miniconda3/bin/python3 .agent/skills/1-web-pack/scripts/collect_web_pack.py \
+  --out-root "/Users/zz/Library/Mobile Documents/iCloud~md~obsidian/Documents/zhangAI/Clippings/Reading" \
+  --title "主题名" \
+  --max-depth 0 \
+  --max-pages 1 \
+  "https://example.com/article"
+```
+
+明确要扩展正文相关资料时使用研究模式：
 
 ```bash
 /Users/zz/miniconda3/bin/python3 .agent/skills/1-web-pack/scripts/collect_web_pack.py \
   --out-root "/Users/zz/Library/Mobile Documents/iCloud~md~obsidian/Documents/zhangAI/Clippings/Reading" \
   --title "主题名" \
   --max-depth 1 \
-  --max-pages 80 \
+  --max-pages 40 \
   "https://example.com/a" \
   "https://example.com/b"
 ```
@@ -66,10 +81,30 @@ YYYY-MM-DD-主题名/
 - `--max-depth 1`：入口链接 + 入口正文相关链接
 - `--max-depth 2`：用户明确要求尽量深挖时使用
 - `--max-pages 40`：普通主题
-- `--max-pages 80`：多入口或资料密集主题
+- `--max-pages 80`：用户明确要求尽量多采集时使用
 - `--same-domain-only`：只采同域资料时使用
 - `--no-jina`：调试时禁用 `r.jina.ai` 兜底
 - `--max-image-mb 20`：单张图片大小上限，默认 20MB
+- `--support-url URL`：给受限入口补充公开来源，可重复使用
+
+## 受限来源恢复
+
+遇到付费墙、Cloudflare、DataDome、CAPTCHA、登录提示或 `pages_restricted` 大于 0 时：
+
+1. 保留脚本生成的 `MAIN-*.md` 受限说明和 `05-access-notes.md`。
+2. 搜索公开转载、监管机构原文、公司公告、论文、官方博客或可信二次报道。
+3. 用 `--support-url` 加入公开来源；这些来源会作为 `LINKED-*.md` 保存。
+4. 检查 `05-access-notes.md`：成功来源应对应真实的 `LINKED-*.md`，失效或受限来源会单独列出，不能计作有效补充。
+
+```bash
+/Users/zz/miniconda3/bin/python3 .agent/skills/1-web-pack/scripts/collect_web_pack.py \
+  --title "主题名" \
+  --max-depth 0 \
+  --max-pages 4 \
+  --support-url "https://public.example.org/report" \
+  --support-url "https://official.example.com/source" \
+  "https://restricted.example.com/article"
+```
 
 ## 抓取顺序
 
@@ -85,7 +120,7 @@ YYYY-MM-DD-主题名/
 ## 图片采集能力
 
 - 懒加载：自动识别 `data-src` / `data-original` / `data-lazy-src` / `data-actualsrc` / `data-echo`，跳过 base64 占位图
-- 响应式：`srcset` / `<picture><source>` 自动选最大宽度档
+- 响应式：`srcset` / `<picture><source>` 自动识别 `w` 和 `x` 描述并选择高清档
 - 防盗链：所有图片请求带页面 `Referer`
 - 纠错：按文件魔数（magic bytes）纠正扩展名，CDN 给错 Content-Type 也能存对
 - 去重：相同内容（sha256）的图片只存一份
@@ -95,6 +130,8 @@ YYYY-MM-DD-主题名/
 
 - 页面 `<video>` / `<source>` / 正文直链 `.mp4/.webm/.mov` 会被识别并写入 `04-media-inventory.md`
 - 入口或正文里的 YouTube / B站 / Vimeo / X / 抖音页面和 m3u8 会被识别并写入 `04-media-inventory.md`
+- YouTube Live、B站短链、Instagram、Facebook 和抖音嵌入链接也会被识别
+- 入口本身就是视频链接时只生成登记说明和媒体清单，不会误下载视频
 - `1-web-pack` 不下载任何视频，不调用 `yt-dlp`，不读取浏览器 cookie
 - 用户明确要下载视频时，切换到 `z-video-downloader`，把 `04-media-inventory.md` 里的 Source URL 作为输入
 
@@ -123,7 +160,7 @@ rg -n '!\[[^]]*\]\(https?://' "资料包目录" || true
 find "资料包目录" -maxdepth 1 -name 'MAIN-*.md' -print
 test -f "资料包目录/03-reading-map.md" && sed -n '1,120p' "资料包目录/03-reading-map.md"
 find "资料包目录/assets" -type f | wc -l
-test -f "资料包目录/04-media-inventory.md" && grep -c '^| ' "资料包目录/04-media-inventory.md"
+test -f "资料包目录/04-media-inventory.md" && rg -c '^\| detected \|' "资料包目录/04-media-inventory.md"
 ```
 
 最终回复说明：
@@ -133,3 +170,4 @@ test -f "资料包目录/04-media-inventory.md" && grep -c '^| ' "资料包目�
 - Markdown 数量、主文数量、关联资料数量、图片数量、视频链接数量
 - 失败、受限或使用 Jina 兜底的链接
 - 如发现视频链接，提示使用 `z-video-downloader` 下载
+- 如存在受限来源，说明已补入哪些公开支持来源；如果仍无公开来源，明确标注资料包仍需补充

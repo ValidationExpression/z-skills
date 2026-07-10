@@ -1,0 +1,38 @@
+{
+  "skill_name": "1-web-pack",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "把这个受付费墙限制的新闻做成资料包，并补两条公开来源：https://restricted.example.com/story",
+      "expected_output": "生成受限来源 MAIN 文件、05-access-notes.md，并用 --support-url 把公开来源保存成 LINKED 文件。",
+      "files": [],
+      "assertions": [
+        "每个入口都有真实存在的 MAIN 文件",
+        "受限正文不会被计为完整抓取成功",
+        "公开支持来源以 LINKED 文件保存"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "把这篇新闻正文保存到本地，别把网站导航栏目也抓进来：https://news.example.com/article/ai-policy",
+      "expected_output": "单篇文章采用保守模式，导航链接不进入抓取队列，资料包包含正文和完整清单。",
+      "files": [],
+      "assertions": [
+        "使用 --max-depth 0 --max-pages 1 的单篇文章模式",
+        "导航栏目不会生成 LINKED 正文",
+        "资料包清单完整"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "用网页素材包收一下这个视频入口：https://cdn.example.com/demo.mp4",
+      "expected_output": "只生成视频登记说明和 04-media-inventory.md，不下载视频内容，并提示交给 z-video-downloader。",
+      "files": [],
+      "assertions": [
+        "视频入口出现在媒体清单",
+        "网页采集过程没有下载视频文件",
+        "输出明确提示 z-video-downloader"
+      ]
+    }
+  ]
+}
