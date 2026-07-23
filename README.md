@@ -18,6 +18,7 @@
 | `z-excel-editor` | 读取、编辑、清洗、格式化电子表格文件 | 修改 xlsx、清洗 csv、补公式、做表格 |
 | `z-father-concept` | 给任意词语或概念寻找父概念、上位概念和更深层解释 | 父概念、给这个词找爸爸、上位概念 |
 | `z-xkcd-panda-comic` | 把文章、主题或观点改写成黑白手绘四格熊猫梗图 | 四格漫画、金馆长熊猫表情、金教授熊猫脸、熊猫梗图、文章转四格漫画 |
+| `z-liang-wenfeng-grounded-qa` | 基于梁文锋交流会材料做有证据边界的问答、观点总结和采访问题设计 | 梁文锋交流会材料、基于材料回答、记者追问、有限推断 |
 
 ## z-web-pack 与 z-video-downloader 边界
 
@@ -154,6 +155,10 @@ z-skills/
   z-video-study-webpage-qwen/
     SKILL.md
     scripts/
+    tests/
+  z-liang-wenfeng-grounded-qa/
+    SKILL.md
+    references/
     tests/
   ...
 ```
