@@ -1,8 +1,6 @@
 ---
 name: z-smart-xparse
-description: Parse documents into clean markdown or structured JSON via xparse-cli, with smart PDF auto-split and merge. Use this skill when the user provides a PDF, image, Office file, HTML, OFD, or other supported document and wants it read, converted, summarized, or prepared for downstream agent use. For PDF files, automatically detects large files (>5MB) or long documents (>100 pages) and splits them into manageable chunks, parses each chunk, then merges results into a single coherent output. Handles encrypted PDFs, page ranges, markdown/text output, and detailed structured extraction.
-compatibility: Requires the `xparse-cli` binary. Free API supports PDF and images with zero config; paid API unlocks additional formats (Doc(x)/Ppt(x)/Xls(x)/HTML/OFD/RTF, etc.) and requires paid credentials configured via `xparse-cli auth` (recommended), or `XPARSE_APP_ID`/`XPARSE_SECRET_CODE` env vars. For PDF splitting, requires `qpdf` or Python 3 with `pypdf` installed.
-
+description: Parse documents into clean markdown or structured JSON via xparse-cli, with smart PDF auto-split and merge. Use this skill when the user provides a PDF, image, Office file, HTML, OFD, or other supported document and wants it read, converted, summarized, or prepared for downstream agent use. For PDF files, automatically detects files larger than 5 MB or documents longer than 100 pages and splits them into manageable chunks, parses each chunk, then merges results into a single coherent output. Handles encrypted PDFs, page ranges, markdown/text output, and detailed structured extraction.
 ---
 
 # z-smart-xparse
@@ -10,6 +8,10 @@ compatibility: Requires the `xparse-cli` binary. Free API supports PDF and image
 ## Overview
 
 An enhanced document parsing skill with **smart PDF auto-split and merge**. For non-PDF files, behaves identically to the standard xparse-parse skill. For PDF files, automatically checks file size and page count before parsing — large or long PDFs are split into chunks, parsed individually, then merged into a single result.
+
+## Compatibility
+
+Requires the `xparse-cli` binary. Free API supports PDF and images with zero config; paid API unlocks additional formats (Doc(x)/Ppt(x)/Xls(x)/HTML/OFD/RTF, etc.) and requires paid credentials configured via `xparse-cli auth` (recommended), or `XPARSE_APP_ID`/`XPARSE_SECRET_CODE` env vars. For PDF splitting, requires `qpdf` or Python 3 with `pypdf` installed.
 
 Use the parse CLI first. Read the result before requesting any more detail.
 

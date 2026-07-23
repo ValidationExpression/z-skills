@@ -2,7 +2,7 @@
 """Download videos from direct URLs and yt-dlp supported platforms.
 
 The direct download and platform-download behavior is adapted from
-.agent/skills/1-web-pack/scripts/collect_web_pack.py.
+.agent/skills/z-web-pack/scripts/collect_web_pack.py.
 """
 from __future__ import annotations
 

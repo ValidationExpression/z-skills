@@ -113,8 +113,8 @@ YouTube 无 cookie 时若 `yt-dlp` 被登录校验拦截，脚本默认会再尝
 
 ## 执行流程
 
-1. 先确认用户给的是视频链接或视频直链；如果是网页素材采集、正文和图片也要保存，改用 `1-web-pack`。
-2. 如果链接来自 `1-web-pack` 的 `04-media-inventory.md`，直接传 `--inventory`，无需手工复制 Source URL。
+1. 先确认用户给的是视频链接或视频直链；如果是网页素材采集、正文和图片也要保存，改用 `z-web-pack`。
+2. 如果链接来自 `z-web-pack` 的 `04-media-inventory.md`，直接传 `--inventory`，无需手工复制 Source URL。
 3. 运行 `scripts/download_video.py`。没有特殊要求时使用默认 1080p、单视频模式。
 4. 如果 YouTube 失败原因包含登录、bot 验证、cookies、captcha，脚本会自动尝试 Invidious 代理 fallback；若用户需要更高清或官方登录态，再使用 `--cookies-file cookies/cookies.txt` 重试。
 5. 如果 B 站或其他平台失败原因包含 HTTP 412、403、登录或 cookies，使用 `--cookies-file cookies/cookies.txt` 重试一次。

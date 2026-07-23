@@ -1,6 +1,6 @@
 ---
-name: 1-web-pack
-description: 当用户提供一个或多个同主题网页链接，并要求“采集网页素材”“把链接正文拿到本地”“正文相关链接也下载”“配图保存到本地”“做成备用写作素材包”“1-web-pack”“z-web-pack”时必须使用。会逐个阅读入口链接正文和正文内高价值相关链接，过滤导航、页脚、广告和社交分享，把 Markdown、链接清单、阅读地图、图片及视频链接清单保存到 Clippings/Reading；支持懒加载图片、srcset 高清档、防盗链 Referer、受限来源说明与公开支持来源补充；发现视频链接只登记到 04-media-inventory.md，下载交给 z-video-downloader；常规抓取失败后才使用 r.jina.ai 兜底。
+name: z-web-pack
+description: 当用户提供一个或多个同主题网页链接，并要求“采集网页素材”“把链接正文拿到本地”“正文相关链接也下载”“配图保存到本地”“做成备用写作素材包”“z-web-pack”时必须使用。会逐个阅读入口链接正文和正文内高价值相关链接，过滤导航、页脚、广告和社交分享，把 Markdown、链接清单、阅读地图、图片及视频链接清单保存到 Clippings/Reading；支持懒加载图片、srcset 高清档、防盗链 Referer、受限来源说明与公开支持来源补充；发现视频链接只登记到 04-media-inventory.md，下载交给 z-video-downloader；常规抓取失败后才使用 r.jina.ai 兜底。
 ---
 
 # 网页素材包采集
@@ -54,7 +54,7 @@ YYYY-MM-DD-主题名/
 单篇文章先采用保守模式，避免新闻站导航链接污染资料包：
 
 ```bash
-/Users/zz/miniconda3/bin/python3 .agent/skills/1-web-pack/scripts/collect_web_pack.py \
+/Users/zz/miniconda3/bin/python3 .agent/skills/z-web-pack/scripts/collect_web_pack.py \
   --out-root "/Users/zz/Library/Mobile Documents/iCloud~md~obsidian/Documents/zhangAI/Clippings/Reading" \
   --title "主题名" \
   --max-depth 0 \
@@ -65,7 +65,7 @@ YYYY-MM-DD-主题名/
 明确要扩展正文相关资料时使用研究模式：
 
 ```bash
-/Users/zz/miniconda3/bin/python3 .agent/skills/1-web-pack/scripts/collect_web_pack.py \
+/Users/zz/miniconda3/bin/python3 .agent/skills/z-web-pack/scripts/collect_web_pack.py \
   --out-root "/Users/zz/Library/Mobile Documents/iCloud~md~obsidian/Documents/zhangAI/Clippings/Reading" \
   --title "主题名" \
   --max-depth 1 \
@@ -97,7 +97,7 @@ YYYY-MM-DD-主题名/
 4. 检查 `05-access-notes.md`：成功来源应对应真实的 `LINKED-*.md`，失效或受限来源会单独列出，不能计作有效补充。
 
 ```bash
-/Users/zz/miniconda3/bin/python3 .agent/skills/1-web-pack/scripts/collect_web_pack.py \
+/Users/zz/miniconda3/bin/python3 .agent/skills/z-web-pack/scripts/collect_web_pack.py \
   --title "主题名" \
   --max-depth 0 \
   --max-pages 4 \
@@ -132,7 +132,7 @@ YYYY-MM-DD-主题名/
 - 入口或正文里的 YouTube / B站 / Vimeo / X / 抖音页面和 m3u8 会被识别并写入 `04-media-inventory.md`
 - YouTube Live、B站短链、Instagram、Facebook 和抖音嵌入链接也会被识别
 - 入口本身就是视频链接时只生成登记说明和媒体清单，不会误下载视频
-- `1-web-pack` 不下载任何视频，不调用 `yt-dlp`，不读取浏览器 cookie
+- `z-web-pack` 不下载任何视频，不调用 `yt-dlp`，不读取浏览器 cookie
 - 用户明确要下载视频时，切换到 `z-video-downloader`，把 `04-media-inventory.md` 里的 Source URL 作为输入
 
 ## 相关链接判断
@@ -165,7 +165,7 @@ test -f "资料包目录/04-media-inventory.md" && rg -c '^\| detected \|' "资�
 
 最终回复说明：
 
-- `1-web-pack` skill 的路径
+- `z-web-pack` skill 的路径
 - 本次资料包路径
 - Markdown 数量、主文数量、关联资料数量、图片数量、视频链接数量
 - 失败、受限或使用 Jina 兜底的链接

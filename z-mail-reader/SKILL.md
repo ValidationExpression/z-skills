@@ -1,6 +1,12 @@
 ---
 name: z-mail-reader
-description: Use when user wants to read emails, check inbox, fetch emails via IMAP, download email attachments, extract inline images, or summarize email content. Also supports real-time polling for new emails with system notifications. Triggers: read emails, check inbox, fetch emails, email summary, email attachments, mail listener, IMAP, QQ邮箱, Foxmail, 读邮件, 查看邮件, 收件箱, 邮件摘要, 邮件总结, 查收邮件, 监听邮件.
+description: >-
+  Use when user wants to read emails, check inbox, fetch emails via IMAP,
+  download email attachments, extract inline images, or summarize email
+  content. Also supports real-time polling for new emails with system
+  notifications. Triggers include read emails, check inbox, fetch emails,
+  email summary, email attachments, mail listener, IMAP, QQ邮箱, Foxmail,
+  读邮件, 查看邮件, 收件箱, 邮件摘要, 邮件总结, 查收邮件, and 监听邮件.
 ---
 
 # z-mail-reader — IMAP 邮件读取与实时监听

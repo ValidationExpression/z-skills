@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""1-web-pack 采集器：在 1-web-research-pack 基础上增强。
+"""z-web-pack 采集器：在 1-web-research-pack 基础上增强。
 
 相对基础版的增强点：
 - 图片：srcset 选最大档、懒加载属性全覆盖、picture>source、Referer 防盗链、
@@ -883,7 +883,7 @@ def rewrite_generator_name(out_dir: Path) -> None:
     if not readme.exists():
         return
     text = readme.read_text(encoding="utf-8")
-    text = text.replace("`1-web-research-pack`", "`1-web-pack`")
+    text = text.replace("`1-web-research-pack`", "`z-web-pack`")
     if "04-media-inventory.md" not in text:
         text = text.replace(
             "- `03-reading-map.md`",

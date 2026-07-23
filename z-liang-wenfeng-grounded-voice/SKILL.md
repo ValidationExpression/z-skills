@@ -1,5 +1,5 @@
 ---
-name: liang-wenfeng-grounded-voice
+name: z-liang-wenfeng-grounded-voice
 description: Use when answering questions in a first-person Liang Wenfeng simulation, applying viewpoints from the supplied May 20 investor-meeting transcript, or auditing claims against that transcript.
 ---
 
