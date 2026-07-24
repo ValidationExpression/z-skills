@@ -73,7 +73,12 @@ PLATFORM_HOST_HINTS = {
     "douyin.com": "Douyin",
     "instagram.com": "Instagram",
     "facebook.com": "Facebook",
+    "weixin.qq.com": "WeixinChannels",
 }
+
+# WeChat Channels (视频号) online parsing service
+# Credits: https://github.com/ltaoo/wx_channels_download
+WX_CHANNELS_PARSE_API = "https://sph.litao.workers.dev/api/fetch_video_profile"
 
 INVIDIOUS_INSTANCES = (
     "https://inv.thepixora.com",
@@ -185,6 +190,155 @@ def collect_input_urls(
     return urls
 
 
+def is_wx_channels_url(url: str) -> bool:
+    """Check if URL is a WeChat Channels (视频号) share link."""
+    parsed = urlparse(url)
+    host = parsed.netloc.lower()
+    return (host == "weixin.qq.com" or host.endswith(".weixin.qq.com")) and "/sph/" in parsed.path
+
+
+def download_wx_channels_video(
+    session: requests.Session,
+    url: str,
+    out_dir: Path,
+    *,
+    max_video_mb: float,
+    timeout: int = 120,
+) -> dict[str, Any]:
+    """Download WeChat Channels video via online parsing service.
+
+    Uses https://sph.litao.workers.dev/ to resolve the share link into
+    actual video URLs (H.264 and H.265), then downloads directly.
+    Credits: https://github.com/ltaoo/wx_channels_download
+    """
+    record = base_record(url, "wx-channels")
+    record["platform"] = "WeixinChannels"
+    try:
+        # Step 1: Parse the share link via online service
+        parse_resp = session.post(
+            WX_CHANNELS_PARSE_API,
+            json={"url": url},
+            headers={"Content-Type": "application/json", "User-Agent": DEFAULT_USER_AGENT},
+            timeout=min(timeout, 30),
+        )
+        if parse_resp.status_code != 200:
+            record["note"] = f"wx-channels-parse-http-{parse_resp.status_code}: {parse_resp.text[:200]}"
+            return record
+
+        data = parse_resp.json()
+        if data.get("errCode") and data.get("errCode") != 0:
+            record["note"] = f"wx-channels-parse-error: {data.get('errMsg', 'unknown')}"
+            return record
+        if "error" in data:
+            record["note"] = f"wx-channels-parse-error: {data['error'][:200]}"
+            return record
+
+        feed_info = (data.get("data") or {}).get("feedInfo") or {}
+        author_info = (data.get("data") or {}).get("authorInfo") or {}
+
+        # Extract video URLs: prefer H.264, fallback to H.265, then default
+        h264_info = feed_info.get("h264VideoInfo") or {}
+        h265_info = feed_info.get("h265VideoInfo") or {}
+        h264_url = h264_info.get("videoUrl", "").strip()
+        h265_url = h265_info.get("videoUrl", "").strip()
+        default_url = feed_info.get("videoUrl", "").strip()
+
+        video_urls: list[tuple[str, str]] = []  # (url, label)
+        if h264_url:
+            video_urls.append((h264_url, "H264"))
+        if h265_url and h265_url != h264_url:
+            video_urls.append((h265_url, "H265"))
+        if not video_urls and default_url:
+            video_urls.append((default_url, "default"))
+
+        if not video_urls:
+            record["note"] = "wx-channels-no-video-url-found"
+            return record
+
+        # Build filename from description and author
+        description = feed_info.get("description", "").strip()
+        nickname = author_info.get("nickname", "").strip()
+        title_base = safe_filename(description[:80] or nickname or "wx-channels-video")
+
+        # Step 2: Download the video(s)
+        limit = int(max_video_mb * 1024 * 1024)
+        downloaded_files: list[str] = []
+        total_bytes = 0
+
+        for video_url, label in video_urls:
+            filename = f"{title_base}_{label}.mp4"
+            target = unique_path(out_dir / filename)
+            partial = Path(str(target) + ".part")
+
+            try:
+                resp = session.get(
+                    video_url,
+                    headers={"User-Agent": DEFAULT_USER_AGENT, "Referer": "https://weixin.qq.com/"},
+                    timeout=timeout,
+                    stream=True,
+                )
+                resp.raise_for_status()
+
+                content_type = resp.headers.get("Content-Type", "").lower()
+                if "text/html" in content_type:
+                    # Skip this version, video URL may have expired
+                    continue
+
+                length = resp.headers.get("Content-Length")
+                if length:
+                    try:
+                        if int(length) > limit:
+                            record["note"] = f"video-larger-than-{max_video_mb:g}MB"
+                            return record
+                    except ValueError:
+                        pass
+
+                size = 0
+                with open(partial, "wb") as handle:
+                    for chunk in resp.iter_content(1024 * 64):
+                        if not chunk:
+                            continue
+                        size += len(chunk)
+                        if size > limit:
+                            handle.close()
+                            partial.unlink(missing_ok=True)
+                            record["note"] = f"video-larger-than-{max_video_mb:g}MB"
+                            return record
+                        handle.write(chunk)
+
+                if size == 0:
+                    partial.unlink(missing_ok=True)
+                    continue
+
+                partial.replace(target)
+                downloaded_files.append(str(target))
+                total_bytes += size
+            except Exception as exc:  # noqa: BLE001
+                if partial.exists():
+                    partial.unlink(missing_ok=True)
+                # If at least one version downloaded, continue
+                if not downloaded_files:
+                    record["note"] = f"wx-channels-download-failed: {str(exc)[:200]}"
+                continue
+
+        if downloaded_files:
+            record["status"] = "ok"
+            record["files"] = downloaded_files
+            record["bytes"] = total_bytes
+            versions = ", ".join(label for _, label in video_urls[:len(downloaded_files)])
+            record["note"] = f"via sph.litao.workers.dev ({versions})"
+        else:
+            if not record["note"]:
+                record["note"] = "wx-channels-all-versions-failed"
+        return record
+    except requests.exceptions.Timeout:
+        record["note"] = "wx-channels-parse-timeout"
+        return record
+    except Exception as exc:  # noqa: BLE001
+        record["note"] = f"wx-channels-error: {str(exc)[:250]}"
+        return record
+
+
 def classify_url(url: str) -> str:
     parsed = urlparse(url)
     suffix = Path(parsed.path).suffix.lower()
@@ -192,6 +346,8 @@ def classify_url(url: str) -> str:
         return "direct"
     if suffix in STREAM_EXTENSIONS:
         return "stream"
+    if is_wx_channels_url(url):
+        return "wx-channels"
     return "platform"
 
 
@@ -795,6 +951,15 @@ def download_one(
     download_archive: str = "",
 ) -> dict[str, Any]:
     kind = classify_url(url)
+    # WeChat Channels (视频号) uses dedicated online parsing
+    if kind == "wx-channels":
+        return download_wx_channels_video(
+            session,
+            url,
+            out_dir,
+            max_video_mb=max_video_mb,
+            timeout=min(timeout, 120),
+        )
     if kind == "direct" and not prefer_ytdlp:
         record = download_direct_video(
             session,

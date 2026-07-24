@@ -1,11 +1,11 @@
 ---
 name: z-video-downloader
-description: 当用户给出视频链接、链接清单或 z-web-pack 的 04-media-inventory.md，并要求“下载视频”“视频下载”“帮我把这个视频下下来”“下载 YouTube 视频”“下载 B站/哔哩哔哩视频”“下载 m3u8/mp4 直链”“把视频保存到本地”“批量下载这些视频”“下载字幕”时必须使用。本 skill 支持单个、多个、文本清单和媒体清单输入，覆盖 YouTube、Bilibili、Vimeo、X/Twitter、TikTok、抖音、Instagram、Facebook 等 yt-dlp 平台及常见视频直链；支持断点续传、重试、字幕、封面和下载历史，保存到 Video/Downloads 并生成报告。
+description: 当用户给出视频链接、链接清单或 z-web-pack 的 04-media-inventory.md，并要求"下载视频""视频下载""帮我把这个视频下下来""下载 YouTube 视频""下载 B站/哔哩哔哩视频""下载 m3u8/mp4 直链""把视频保存到本地""批量下载这些视频""下载字幕""下载视频号""视频号下载"时必须使用。本 skill 支持单个、多个、文本清单和媒体清单输入，覆盖 YouTube、Bilibili、Vimeo、X/Twitter、TikTok、抖音、Instagram、Facebook、微信视频号等 yt-dlp 平台及常见视频直链；支持断点续传、重试、字幕、封面和下载历史，保存到 Video/Downloads 并生成报告。
 ---
 
 # 视频下载器
 
-把用户给的视频链接下载成本地视频文件。网页素材采集只记录视频链接，真正下载统一交给本 skill。直链视频支持 `.part` 文件和 HTTP Range 续传，平台视频和 m3u8 使用 `yt-dlp` 的续传、分片并发与重试能力；遇到平台风控时优先使用导出的 `cookies.txt` 文件重试。
+把用户给的视频链接下载成本地视频文件。网页素材采集只记录视频链接，真正下载统一交给本 skill。直链视频支持 `.part` 文件和 HTTP Range 续传，平台视频和 m3u8 使用 `yt-dlp` 的续传、分片并发与重试能力；遇到平台风控时优先使用导出的 `cookies.txt` 文件重试。微信视频号（`weixin.qq.com/sph/` 分享链接）通过在线解析服务直接获取视频地址下载，无需本地安装额外工具。
 
 ## 依赖
 
@@ -68,6 +68,16 @@ Video/Downloads/YYYY-MM-DD-主题/
   --title "主题名" \
   "视频链接"
 ```
+
+微信视频号分享链接：
+
+```bash
+/Users/zz/miniconda3/bin/python3 .agent/skills/z-video-downloader/scripts/download_video.py \
+  --title "视频号主题" \
+  "https://weixin.qq.com/sph/Axv548mzBF"
+```
+
+视频号链接会自动识别并通过在线解析服务下载，默认保存 H.264 和 H.265 两个版本。
 
 命令行临时调试仍支持 `--browser-cookies chrome`，但网页服务应使用 `--cookies-file`，避免服务进程反复唤起 Chrome/Safari。
 
@@ -132,6 +142,7 @@ YouTube 无 cookie 时若 `yt-dlp` 被登录校验拦截，脚本默认会再尝
 
 - mp4/webm/mov/m4v/mkv/flv/ogv 直链：脚本直接流式下载，保留 Referer 和 User-Agent。
 - m3u8、YouTube、Bilibili、Vimeo、X/Twitter、TikTok、抖音等：交给 `yt-dlp`。
+- **微信视频号**（`https://weixin.qq.com/sph/xxx`）：通过 `sph.litao.workers.dev` 在线解析服务获取 H.264/H.265 视频直链后下载，默认同时保存两个编码版本。无需微信登录态、无需安装证书。感谢 [ltaoo/wx_channels_download](https://github.com/ltaoo/wx_channels_download) 提供解析服务。
 - YouTube 直连被登录校验拦截时：尝试 Invidious `local=true` 代理端点，使用 Range 小块续传保存 360p MP4。
 - 默认 `--no-playlist`，避免一个链接意外下载整套列表。
 - 默认 `--max-video-mb 2000`，超出时失败并记录到报告。
