@@ -9,7 +9,7 @@
 | Skill | 用途 | 典型触发 |
 | --- | --- | --- |
 | `z-web-pack` | 采集网页正文、链接、图片和视频链接，整理成本地写作素材包 | 采集网页素材、把链接正文拿到本地、做成备用写作素材包 |
-| `z-video-downloader` | 下载 YouTube、B站、m3u8、mp4 直链等视频 | 下载视频、下载 B站、下载 YouTube、下载 m3u8 |
+| `z-video-downloader` | 下载 YouTube、B站、微信视频号、m3u8、mp4 直链等视频 | 下载视频、下载 B站、下载 YouTube、下载 m3u8、下载视频号 |
 | `z-video-study-webpage-qwen` | 用转录、关键帧和 Qwen 多模态分析视频，生成图文学习网页 | 理解视频内容、视频学习总结网页、关键知识点匹配画面 |
 | `z-smart-xparse` | 用 xparse-cli 把 PDF、图片、Office 等文档转成 Markdown 或结构化结果 | 解析 PDF、文档转 Markdown、读取扫描件 |
 | `z-mail-reader` | 通过 IMAP 读取邮件、下载附件、摘要邮件内容、监听新邮件 | 读邮件、查收邮件、邮件摘要、监听邮件 |
@@ -23,7 +23,7 @@
 
 `z-web-pack` 负责网页素材包采集，包含正文、正文相关链接、图片、本地阅读地图、媒体链接清单，以及受限来源恢复说明
 
-`z-video-downloader` 负责视频下载，包含 YouTube、Bilibili、Vimeo、X/Twitter、TikTok、抖音、Instagram、Facebook、m3u8 和常见视频直链，并支持断点续传、批量清单、字幕、封面和下载历史
+`z-video-downloader` 负责视频下载，包含 YouTube、Bilibili、Vimeo、X/Twitter、TikTok、抖音、Instagram、Facebook、**微信视频号**、m3u8 和常见视频直链，并支持断点续传、批量清单、字幕、封面和下载历史。视频号分享链接（`weixin.qq.com/sph/`）通过在线解析服务自动获取视频地址，无需额外安装
 
 `z-web-pack` 发现视频时只写入 `04-media-inventory.md`。如果要把视频保存到本地，把清单中的 Source URL 交给 `z-video-downloader`
 
