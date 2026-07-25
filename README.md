@@ -1,6 +1,6 @@
 # z-skills
 
-`z-skills` 是一组可复用的本地 Agent Skills，用来把常见工作流沉淀成稳定能力：网页素材采集、视频下载、视频学习网页、文档解析、邮件读取、表格处理、Markdown 转 Word、概念拆解，以及文章四格漫画配图
+`z-skills` 是一组可复用的本地 Agent Skills，用来把常见工作流沉淀成稳定能力：网页素材采集、视频下载、视频学习网页、文档解析、邮件读取、表格处理、Markdown 转 Word、证据型资料问答，以及文章四格漫画配图
 
 这些 skill 默认面向中文创作、知识管理和自动化任务，适合放到本地 `.agent/skills/` 或 Codex/Claude Code 等支持 Skills 的环境里使用
 
@@ -17,6 +17,7 @@
 | `z-md-excel` | 把 Markdown 里的表格提取成 Excel 文件 | Markdown 表格转 Excel、导出 MD 表格 |
 | `z-excel-editor` | 读取、编辑、清洗、格式化电子表格文件 | 修改 xlsx、清洗 csv、补公式、做表格 |
 | `z-xkcd-panda-comic` | 把文章、主题或观点改写成黑白手绘四格熊猫梗图 | 四格漫画、金馆长熊猫表情、金教授熊猫脸、熊猫梗图、文章转四格漫画 |
+| `z-grounded-source-qa` | 对任意本地 Markdown/TXT 资料做多表达式检索、证据型问答、核对和写作 | 只根据这些资料回答、按原文核对、给出出处、从访谈里找依据 |
 | `z-liang-wenfeng-grounded-voice` | 基于梁文锋交流会材料做第一人称模拟回答、观点推演和来源核对 | 梁文锋交流会材料、现在你是梁文锋、记者追问、按原文核对 |
 
 ## z-web-pack 与 z-video-downloader 边界
@@ -79,6 +80,12 @@ cp -R z-* "/path/to/your/.agent/skills/"
 ```
 
 安装后，新会话开始时，Agent 会根据每个 `SKILL.md` 的 `name` 和 `description` 自动匹配触发词
+
+通过 `npx skills` 单独安装通用证据问答 Skill：
+
+```bash
+npx skills add tjxj/z-skills --skill z-grounded-source-qa
+```
 
 ## 新增：Markdown 转 Word Skill
 
@@ -160,6 +167,13 @@ z-skills/
     examples/
     references/
     tests/
+  z-grounded-source-qa/
+    SKILL.md
+    README.md
+    scripts/
+    references/
+    tests/
+    evals/
   ...
 ```
 
