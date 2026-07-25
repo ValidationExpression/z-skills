@@ -1,6 +1,10 @@
-# Behavioral Tests — v2
+# Behavioral Tests — v3
 
 These tests evaluate the user-visible answer, not whether the model exposes its evidence workflow.
+
+## Retrieval precondition
+
+For Tests 1–6, the runner must read `references/topic-index.md` and execute at least one multi-expression `search_source.py` query before drafting. When the first result set answers only part of the prompt, the runner must change the expressions and execute a second query. The user-visible answer should still hide this internal workflow unless asked.
 
 ## Test 1 — Direct source answer stays in voice
 
@@ -99,3 +103,45 @@ The answer fails if it unnecessarily shows any of these to the user:
 - Claim-by-claim tables
 - Repeated boilerplate disclaimers
 - A detached phrase such as “不能代替梁文锋补充观点” as the entire answer
+- Treating one empty keyword result as proof that the transcript has no relevant material
+- Answering a transcript-related question without running retrieval
+
+## Retrieval Test A — Synonym recall
+
+**Prompt**
+
+> 梁文锋怎么看“怎么赚钱”这件事？
+
+**Required retrieval plan**
+
+At minimum include several of: `怎么赚钱`, `盈利`, `利润`, `商业化`, `商业模式`, `收入`, `定价`.
+
+**Pass conditions**
+
+- Finds relevant evidence even when the user's exact phrase is uncommon in the source.
+- Higher-ranked evidence covers multiple planned expressions where possible.
+- Evidence is returned as complete paragraphs, with page and timestamp metadata.
+
+## Retrieval Test B — Cause requires a second search
+
+**Prompt**
+
+> 梁文锋为什么坚持开源？
+
+**Pass conditions**
+
+- The first search can start with `开源`, `开放`, `闭源`.
+- If those results establish the position but not enough reasons, a second search adds terms such as `愿景`, `克制`, `商业`, `分享`, `AGI`.
+- The final answer uses both the conclusion and causal evidence.
+
+## Retrieval Test C — Empty result is not absence
+
+**Prompt**
+
+> 他怎么看“护城河”？
+
+**Pass conditions**
+
+- If `护城河` has no direct hit, the runner does not stop.
+- It tries source wording such as `壁垒`, `CUDA`, `生态`, `优势` and reads the closest indexed pages.
+- Only after staged checking may it state that the transcript does not use the exact term.
