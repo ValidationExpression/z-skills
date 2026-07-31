@@ -1,6 +1,6 @@
 # z-skills
 
-`z-skills` 是一组可复用的本地 Agent Skills，用来把常见工作流沉淀成稳定能力：网页素材采集、视频下载、视频学习网页、文档解析、邮件读取、表格处理、Markdown 转 Word、证据型资料问答，以及文章四格漫画配图
+`z-skills` 是一组可复用的本地 Agent Skills，用来把常见工作流沉淀成稳定能力：网页素材采集、视频下载、视频学习网页、文档解析、邮件读取、表格处理、Markdown 转 Word、证据型资料问答、docx 模板格式刷，以及文章四格漫画配图
 
 这些 skill 默认面向中文创作、知识管理和自动化任务，适合放到本地 `.agent/skills/` 或 Codex/Claude Code 等支持 Skills 的环境里使用
 
@@ -20,6 +20,7 @@
 | `z-grounded-source-qa` | 对任意本地 Markdown/TXT 资料做多表达式检索、证据型问答、核对和写作 | 只根据这些资料回答、按原文核对、给出出处、从访谈里找依据 |
 | `z-liang-wenfeng-grounded-voice` | 基于梁文锋交流会材料做第一人称模拟回答、观点推演和来源核对 | 梁文锋交流会材料、现在你是梁文锋、记者追问、按原文核对 |
 | `z-sci-viz-lab` | 把数学/科学概念生成可视化互动科普单页，支持多场景切换、Three.js/Canvas、单文件构建与 Cloudflare Pages 部署 | 可视化科普、互动科普实验、科学交互演示 |
+| `z-docx-format-brush` | 从模板 docx 提取格式指纹（字体/字号/行距/缩进/表格边框/封面/分页），统一刷到目标 docx，修复 pandoc/模型产物的格式混乱 | 格式刷、格式统一、套用模板格式、docx格式修复、公文格式 |
 
 ## z-web-pack 与 z-video-downloader 边界
 
@@ -107,6 +108,31 @@ output/doc/<原文件名>.docx
 output/doc/<原文件名>.doc
 ```
 
+## docx 格式刷 Skill
+
+`z-docx-format-brush` 用来把一份模板 docx 的格式"刷"到另一份 docx 上，核心思想是格式参数从模板实测提取、收敛到唯一出口应用
+
+典型场景：
+
+- 修复 pandoc / 大模型产出的格式混乱 docx（字体混排、标题带蓝色、表格无边框、引号反向）
+- 参照模板从零生成格式一致的公文类文档
+- 诊断两份 docx 的格式差异
+
+三步工作流：
+
+```bash
+# 1. 解剖模板 → 格式指纹 JSON
+python3 z-docx-format-brush/scripts/extract_fingerprint.py 模板.docx --json fp.json
+
+# 2. 五层格式刷（样式/段落/封面/表格/文字），不带 --config 走中文公文默认参数
+python3 z-docx-format-brush/scripts/apply_format.py 目标.docx --config fp.json
+
+# 3. 验证收敛度，退出码 0 才算完成
+python3 z-docx-format-brush/scripts/verify_format.py 目标.docx
+```
+
+详细方法论和踩坑记录见 `z-docx-format-brush/README.md`
+
 ## 熊猫四格漫画 Skill
 
 `z-xkcd-panda-comic` 用来把文章或主题变成一张 2x2 四格漫画，默认风格是：
@@ -150,6 +176,10 @@ z-skills/
     SKILL.md
     assets/
     evals/
+  z-docx-format-brush/
+    SKILL.md
+    README.md
+    scripts/
   z-md-to-word/
     SKILL.md
     README.md
