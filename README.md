@@ -1,6 +1,6 @@
 # z-skills
 
-`z-skills` 是一组可复用的本地 Agent Skills，用来把常见工作流沉淀成稳定能力：网页素材采集、视频下载、视频学习网页、文档解析、邮件读取、表格处理、Markdown 转 Word、证据型资料问答、docx 模板格式刷，以及文章四格漫画配图
+`z-skills` 是一组可复用的本地 Agent Skills，用来把常见工作流沉淀成稳定能力：网页素材采集、视频下载、视频学习网页、文档解析、邮件读取、表格处理、Markdown 转 Word、证据型资料问答、docx 模板格式刷、手写幻灯片，以及文章四格漫画配图
 
 这些 skill 默认面向中文创作、知识管理和自动化任务，适合放到本地 `.agent/skills/` 或 Codex/Claude Code 等支持 Skills 的环境里使用
 
@@ -17,6 +17,7 @@
 | `z-md-excel` | 把 Markdown 里的表格提取成 Excel 文件 | Markdown 表格转 Excel、导出 MD 表格 |
 | `z-excel-editor` | 读取、编辑、清洗、格式化电子表格文件 | 修改 xlsx、清洗 csv、补公式、做表格 |
 | `z-xkcd-panda-comic` | 把文章、主题或观点改写成黑白手绘四格熊猫梗图 | 四格漫画、金馆长熊猫表情、金教授熊猫脸、熊猫梗图、文章转四格漫画 |
+| `z-wanghong-handwritten-ppt` | 把文章或讲稿制作成 16:9 Notability 学术手写风 HTML 幻灯片并导出 PNG | 王虹PPT风格、王虹手写PPT、Notability学术手写幻灯片、手写网页PPT |
 | `z-grounded-source-qa` | 对任意本地 Markdown/TXT 资料做多表达式检索、证据型问答、核对和写作 | 只根据这些资料回答、按原文核对、给出出处、从访谈里找依据 |
 | `z-liang-wenfeng-grounded-voice` | 基于梁文锋交流会材料做第一人称模拟回答、观点推演和来源核对 | 梁文锋交流会材料、现在你是梁文锋、记者追问、按原文核对 |
 | `z-sci-viz-lab` | 把数学/科学概念生成可视化互动科普单页，支持多场景切换、Three.js/Canvas、单文件构建与 Cloudflare Pages 部署 | 可视化科普、互动科普实验、科学交互演示 |
@@ -172,6 +173,14 @@ z-xkcd-panda-comic/assets/reference-codex-computer-housekeeper-panda-comic.png
 
 ```text
 z-skills/
+  z-wanghong-handwritten-ppt/
+    SKILL.md
+    templates/
+    assets/
+    examples/
+    references/
+    scripts/
+    evals/
   z-xkcd-panda-comic/
     SKILL.md
     assets/
