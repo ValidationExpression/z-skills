@@ -86,16 +86,19 @@ docx 内部存的是 EMU，磅 = EMU ÷ 12700，152400 就是 12 磅，换算错
 
 一次性修复只值一杯咖啡，可复用的流程才值钱
 
-我把整套方法沉淀成了 `z-docx-format-brush`，三个脚本对应三步工作流：
+我把整套方法沉淀成了 `z-docx-format-brush`，四个脚本覆盖指纹提取、新建、修复和验证：
 
 ```shell
 # 第一步：解剖模板，输出格式指纹
 python3 scripts/extract_fingerprint.py 模板.docx --json fp.json
 
-# 第二步：把指纹刷到目标文件（不带 --config 走中文公文默认参数）
+# 新建文档：结构化内容全部经过 title()/para()/table() 工厂写入
+python3 scripts/gen_from_template.py content.json --config fp.json --out 新文档.docx
+
+# 修复文档：把指纹刷到目标文件（不带 --config 走中文公文默认参数）
 python3 scripts/apply_format.py 目标.docx --config fp.json
 
-# 第三步：验证，退出码 0 才算完成
+# 最后验证，退出码 0 才算完成
 python3 scripts/verify_format.py 目标.docx
 ```
 

@@ -125,7 +125,10 @@ output/doc/<原文件名>.doc
 # 1. 解剖模板 → 格式指纹 JSON
 python3 z-docx-format-brush/scripts/extract_fingerprint.py 模板.docx --json fp.json
 
-# 2. 五层格式刷（样式/段落/封面/表格/文字），不带 --config 走中文公文默认参数
+# 2A. 从零新建：结构化内容统一经过格式工厂
+python3 z-docx-format-brush/scripts/gen_from_template.py content.json --config fp.json --out 新文档.docx
+
+# 2B. 修复已有文档：五层格式刷（样式/段落/封面/表格/文字）
 python3 z-docx-format-brush/scripts/apply_format.py 目标.docx --config fp.json
 
 # 3. 验证收敛度，退出码 0 才算完成

@@ -12,6 +12,7 @@
      "font": "仿宋", "table_cell_size_pt": 12, "cover": true, "chapter_page_break": true}
 """
 import argparse
+import copy
 import json
 import sys
 
@@ -35,7 +36,8 @@ DEFAULTS = {
 
 
 def load_config(path):
-    cfg = dict(DEFAULTS)
+    # 每次加载都复制嵌套配置，避免一次自定义配置污染后续调用。
+    cfg = copy.deepcopy(DEFAULTS)
     if not path:
         return cfg
     with open(path, encoding='utf-8') as f:

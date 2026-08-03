@@ -65,7 +65,15 @@ python3 scripts/apply_format.py "目标.docx" --config fingerprint.json [--out "
 - **首行缩进2字符** ≈ Emu(304800)（12磅正文）或 Emu(406400)（16磅正文），即 2×字号
 - **清颜色**：`r.font.color.rgb = None` 不够，需从 rPr 中 remove `w:color` 元素
 - **章节分页**：往 pPr 里插 `w:pageBreakBefore` 元素，优于插入分页符 run
-- **新建场景**：不要逐段设置格式，写 `title()/para()` 两个工厂函数把指纹参数硬编码进去，所有段落只从工厂函数出（参考 scripts/gen_from_template.py 骨架）
+- **新建场景**：先准备结构化内容 JSON，再调用 `scripts/gen_from_template.py`。脚本内的 `title()`、`para()` 和 `table()` 工厂统一应用指纹参数，所有内容只从工厂函数写入。
+
+```bash
+python3 scripts/gen_from_template.py "content.json" \
+  --config fingerprint.json \
+  --out "output/doc/输出.docx"
+```
+
+内容 JSON 使用 `cover` 和 `blocks`。`blocks` 支持 `heading`、`paragraph`、`table`、`page_break`；完整示例见脚本顶部说明。
 
 ## 验证（必做，做完才算完成）
 
