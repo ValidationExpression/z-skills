@@ -44,6 +44,25 @@ class PolicyExampleTests(unittest.TestCase):
         self.assertIn("应先联系商家重开", content)
         self.assertIn("部门负责人说明延迟原因", content)
 
+    def test_first_class_train_without_preapproval(self) -> None:
+        payload = self.search(["高铁", "二等座", "高于制度标准", "2 个工作日"])
+        content = self.combined_content(payload)
+        self.assertIn("高铁和动车原则上报销二等座", content)
+        self.assertIn("可核验的标准席位价格", content)
+        self.assertIn("2 个工作日内补充说明", content)
+
+    def test_business_entertainment_approval_and_materials(self) -> None:
+        payload = self.search(["业务招待", "1,000 元", "财务负责人", "参与人名单"])
+        content = self.combined_content(payload)
+        self.assertIn("单次预算超过 1,000 元", content)
+        self.assertIn("餐饮发票、消费明细、支付记录和参与人名单", content)
+
+    def test_overseas_travel_is_explicitly_unsupported(self) -> None:
+        payload = self.search(["境外差旅", "外币汇率", "书面咨询", "自行推定"])
+        content = self.combined_content(payload)
+        self.assertIn("本制度没有规定境外差旅标准", content)
+        self.assertIn("不能根据相近条款自行推定", content)
+
 
 if __name__ == "__main__":
     unittest.main()

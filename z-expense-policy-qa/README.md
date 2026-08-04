@@ -18,7 +18,7 @@
 
 回答前会运行 `scripts/search_evidence.py`，以多表达式检索完整段落，并保留来源位置
 
-三组实测问答见 [examples/golden-answers.md](examples/golden-answers.md)
+六组实测问答见 [examples/golden-answers.md](examples/golden-answers.md)
 
 运行验证：
 
