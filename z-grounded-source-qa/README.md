@@ -90,6 +90,52 @@ npx skills add tjxj/z-skills --list
 npx skills add tjxj/z-skills --skill z-grounded-source-qa
 ```
 
+## 把底座生成专用 Skill
+
+这个版本新增了一个生成器，可以把底层检索能力、你的资料、专用回答规则和测试问题一起打包成独立 Skill
+
+公式很简单：
+
+```text
+专用 Skill = 检索能力 + 有边界的资料 + 回答契约 + 测试问题
+```
+
+先把 PDF 转成带页码的 Markdown：
+
+```bash
+pdftotext -layout source.pdf extracted.txt
+
+python3 scripts/prepare_pdftotext.py \
+  extracted.txt prepared-source.md \
+  --title "资料标题"
+```
+
+编号语录、编号制度可以增加 `--mode numbered`
+
+再生成专用 Skill：
+
+```bash
+python3 scripts/create_specialized_skill.py \
+  --name z-example-advisor \
+  --title "示例顾问" \
+  --mode advisor \
+  --source prepared-source.md \
+  --output-root "/path/to/.agent/skills" \
+  --trigger "示例书籍" \
+  --question "我现在最应该先做什么，为什么"
+```
+
+支持四种回答契约：
+
+- `persona`：人物公开材料的第一人称模拟与受控推演
+- `advisor`：书籍、课程、研究资料的框架提炼与行动指导
+- `policy`：报销、差旅、请假、采购等制度预审
+- `source-qa`：项目资料、访谈、会议纪要和混合知识库问答
+
+生成结果自带检索脚本、内置语料、来源哈希、角色说明和 `evals.json`，复制整个目录就能使用
+
+详细定制方法见 [references/specialization-guide.md](references/specialization-guide.md)
+
 ## 快速使用
 
 ```bash
@@ -193,10 +239,13 @@ z-grounded-source-qa/
 ├── SKILL.md
 ├── README.md
 ├── scripts/
-│   └── search_evidence.py
+│   ├── search_evidence.py
+│   ├── prepare_pdftotext.py
+│   └── create_specialized_skill.py
 ├── references/
 │   ├── evidence-contract.md
-│   └── source-preparation.md
+│   ├── source-preparation.md
+│   └── specialization-guide.md
 ├── tests/
 │   └── test_search_evidence.py
 └── evals/

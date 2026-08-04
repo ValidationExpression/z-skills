@@ -1,0 +1,12 @@
+{
+  "skill": "z-expense-policy-qa",
+  "mode": "policy",
+  "source_note": "星河科技费用报销制度V2.1为虚构演示资料，真实使用前必须替换语料",
+  "sources": [
+    {
+      "file": "reimbursement-policy-demo.md",
+      "bytes": 6080,
+      "sha256": "8b5fe467d52559527be1954df60e6425a74dd5de8e78e4c134f168b967ab50fe"
+    }
+  ]
+}

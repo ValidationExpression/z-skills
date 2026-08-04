@@ -121,6 +121,39 @@ Use source-backed reasoning and vocabulary. Preserve qualifiers and uncertainty.
 
 The script exits with code `1` when no evidence matches, while still emitting a valid result and a query-miss warning.
 
+## Create a dedicated Skill from this base
+
+Use a dedicated Skill when the same person, book, policy, project, or product corpus will be queried repeatedly. The specialization should combine four layers:
+
+```text
+retrieval capability + bounded corpus + answer contract + eval questions
+```
+
+Prepare page-marked Markdown from `pdftotext` output when needed:
+
+```bash
+python3 scripts/prepare_pdftotext.py \
+  extracted.txt prepared-source.md \
+  --title "Source title"
+```
+
+Generate a self-contained specialization:
+
+```bash
+python3 scripts/create_specialized_skill.py \
+  --name z-example-advisor \
+  --title "Example Advisor" \
+  --mode advisor \
+  --source prepared-source.md \
+  --output-root /path/to/.agent/skills \
+  --trigger "example book" \
+  --question "What should I do first and why"
+```
+
+Choose `persona`, `advisor`, `policy`, or `source-qa` according to the intended answer contract. The generated Skill includes its own retriever, corpus directory, source hashes, profile, and eval questions.
+
+Read [references/specialization-guide.md](references/specialization-guide.md) before public release or when the specialization needs custom voice, policy authority, source reliability, or failure-boundary rules.
+
 ## Completion check
 
 Before sending the final answer, confirm:
@@ -132,3 +165,4 @@ Before sending the final answer, confirm:
 - conflicts and source limitations are visible
 - source locations are precise enough for another person to verify
 - the final format matches the user's requested answer, audit, article, or simulation
+- a generated specialization was tested with realistic questions before being shared
