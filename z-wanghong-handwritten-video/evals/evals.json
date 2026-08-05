@@ -1,0 +1,23 @@
+{
+  "skill_name": "z-wanghong-handwritten-video",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "把 z-wanghong-handwritten-ppt 生成的这套 HTML 做成动画版，只使用原 PPT Skill 预览封面里的手写字，输出 MP4，不要旁白音频。",
+      "expected_output": "直接渲染原 HTML DOM，锁定预览封面字形并校验实际字体，输出 1920x1080、30fps、H.264、零音频流 MP4 与 cover.png。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "我有一套王虹手写 HTML PPT，保留原字号、配色、图表和标注，做成 45 秒纯画面视频。",
+      "expected_output": "不重新排版页面，按 DOM 顺序增加元素进入、标记揭示和 SVG 路径绘制，媒体检查通过。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "先用王虹手写 PPT skill 做这篇文章，再直接生成无声动画 MP4。",
+      "expected_output": "先完成并检查原 HTML，再用本 Skill 直接渲染相同 DOM，交付 MP4、封面和媒体验证结果。",
+      "files": []
+    }
+  ]
+}
