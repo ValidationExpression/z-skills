@@ -88,7 +88,7 @@ Constraints: exact text; one-line title; huge whitespace; no subtitle; no icon; 
 
 整体要求：
 1. 画布固定为 16:9，背景使用淡暖白。页面没有页眉、页脚、页码、品牌装饰和卡片阴影。
-2. 中文字体优先使用 HanziPen SC、Hannotate SC、LXGW WenKai、Kaiti SC；英文与数字沿用同一手写字体栈。
+2. 中文、英文与数字固定使用 HanziPen SC，字形以 `assets/preview-cover.png` 为验收基准。
 3. 正文字号控制在投影可读范围内，标题比正文大一档，避免商业演示常见的超大标题。
 4. 主文字用深蓝色。蓝色用于推导线和坐标轴，玫红用于结论框和推荐项，绿色用于已确认结构，荧光黄用于极少量关键词，珊瑚粉用于例外或剩余部分。
 5. 每页只回答一个问题。允许左文右图、上式下图、定义加图解等自由布局。框、线、箭头和坐标轴都保留轻微手画抖动。
@@ -98,7 +98,7 @@ Constraints: exact text; one-line title; huge whitespace; no subtitle; no icon; 
 - 本地引入 neat-annotations.css。
 - 在要标注的词外包一层 span，使用 ann、方向类和颜色类。
 - data-note 可以直接放中文，例如 data-note="甜点档"。
-- 将 --ann-font 改为中文手写字体栈，--ann-label-max-width 设为 180px 到 240px。
+- 将 --ann-font 固定为 HanziPen SC，--ann-label-max-width 设为 180px 到 240px。
 - 标注采用绝对定位，因此被标注内容四周必须预留空间。
 - 重要信息要同时出现在正文里，标注只承担视觉提示。
 
@@ -126,7 +126,7 @@ Constraints: exact text; one-line title; huge whitespace; no subtitle; no icon; 
 
 - 标注文字来自 `data-note`，中文字符可以正常显示。
 - 八个箭头方向、颜色、高亮和嵌套标注与文字语言无关。
-- 项目默认推荐的 Shantell Sans 主要覆盖拉丁字符。中文环境需要指定 HanziPen SC、Hannotate SC、LXGW WenKai 或其他中文手写字体。
+- 项目所有文字统一使用 HanziPen SC。渲染前确认字体已安装，渲染后与预览封面核对字形。
 - 标注处于目标元素外侧，不会自动占据页面空间。中文短语较长时要加大最大宽度，并预留上下左右的空白。
 - 标注属于视觉提示。关键结论仍要写在正文中。
 

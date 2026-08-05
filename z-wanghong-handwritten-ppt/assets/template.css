@@ -7,9 +7,13 @@
   --yellow: #fff04f;
   --coral: #ffaaa4;
   --muted: #6a718f;
-  --hand: "HanziPen SC", "Hannotate SC", "LXGW WenKai", "Kaiti SC", KaiTi, cursive;
+  --hand: "HanziPen SC";
   --ann-font: var(--hand);
   --ann-label-max-width: 220px;
+  --font-sans: var(--hand);
+  --font-display: var(--hand);
+  --font-mono: var(--hand);
+  --font-serif: var(--hand);
 }
 
 html,

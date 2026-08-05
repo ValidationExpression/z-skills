@@ -70,7 +70,7 @@ description: 将文章、讲稿或技术主题制作成王虹学术报告气质�
 - 荧光黄：极少量关键词
 - 珊瑚粉：例外、损失或剩余部分
 
-字体优先级：`HanziPen SC`、`Hannotate SC`、`LXGW WenKai`、`Kaiti SC`、楷体。保持细笔画和略微不齐的基线。
+字体固定使用 `HanziPen SC`，与 `assets/preview-cover.png` 里的字形保持一致。不设置其他中文字体候选。渲染环境缺少该字体时先安装，不得带着替代字形交付。
 
 避免圆角卡片、阴影、渐变、装饰图标、商业模板、照片背景和大面积色块。
 
@@ -82,7 +82,7 @@ description: 将文章、讲稿或技术主题制作成王虹学术报告气质�
 
 ```css
 :root {
-  --ann-font: "HanziPen SC", "Hannotate SC", "LXGW WenKai", "Kaiti SC", cursive;
+  --ann-font: "HanziPen SC";
   --ann-label-max-width: 220px;
 }
 ```
@@ -130,8 +130,14 @@ python3 scripts/check_deck.py /absolute/path/to/index.html
 再逐页导出：
 
 ```bash
-scripts/render.sh /absolute/path/to/index.html all /absolute/path/to/png-output
+scripts/render.sh \
+  /absolute/path/to/index.html \
+  all \
+  /absolute/path/to/png-output \
+  /absolute/path/to/Hanzipen.ttc
 ```
+
+macOS 上可先在字体册下载“翩翩体-简”。脚本会把指定字体文件直接注入临时渲染页，并在导出前确认字体加载成功。缺少该字体或加载失败时停止导出。
 
 实际查看所有 PNG。重点检查：
 

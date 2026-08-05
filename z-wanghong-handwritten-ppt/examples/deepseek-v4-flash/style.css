@@ -9,7 +9,7 @@
   --coral: #ef8e91;
   --purple: #6e50a5;
   --sky: #74ace7;
-  --hand-font: "HanziPen SC", "Hannotate SC", "LXGW WenKai", "Kaiti SC", cursive;
+  --hand-font: "HanziPen SC";
   --bg: var(--paper);
   --bg-soft: var(--paper);
   --surface: transparent;
@@ -24,6 +24,8 @@
   --shadow: none;
   --font-sans: var(--hand-font);
   --font-display: var(--hand-font);
+  --font-mono: var(--hand-font);
+  --font-serif: var(--hand-font);
   --letter-tight: .02em;
   --letter-normal: .02em;
 }
@@ -758,7 +760,7 @@ body {
 .command-block code,
 .thinking-modes code,
 .mono-note {
-  font-family: "LXGW WenKai Mono", "HanziPen SC", monospace;
+  font-family: var(--hand-font);
 }
 
 .command-block code {
@@ -877,7 +879,7 @@ body {
 }
 
 .thanks-main {
-  font-family: "HanziPen SC", "Hannotate SC", cursive;
+  font-family: var(--hand-font);
   font-size: 82px;
   color: var(--ink);
 }

@@ -1,11 +1,11 @@
 /* neat-annotations — neat hand-drawn CSS annotations: arrows + handwritten labels.
    https://github.com/syabro/neat-annotations · MIT license.
-   Labels look best with the Shantell Sans font (falls back to system cursive). */
+   Labels use the same exact font as every other element in this skill. */
 
 .ann {
   --ann-color: oklch(0.62 0.005 30);
   --ann-mark: light-dark(color-mix(in oklch, var(--ann-color) 10%, transparent), oklch(from var(--ann-color) l calc(c * 1.35) h / 24%));
-  --ann-font: 'Shantell Sans', cursive;
+  --ann-font: 'HanziPen SC';
   --ann-target-gap: 5px;
   --ann-label-gap: 6px;
   --ann-lower-label-gap: -4px;

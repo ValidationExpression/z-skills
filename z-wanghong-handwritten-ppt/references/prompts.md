@@ -137,7 +137,7 @@ Constraints: no commercial template, no large decorative title, no gradients, no
 
 视觉系统：
 1. 画布固定 1920×1080 和 16:9，背景使用淡暖白。没有页眉、页脚、页码、品牌装饰和卡片阴影。
-2. 字体优先使用 HanziPen SC、Hannotate SC、LXGW WenKai、Kaiti SC；英文与数字沿用同一手写字体栈。
+2. 中文、英文与数字固定使用 HanziPen SC，字形必须与 `assets/preview-cover.png` 一致。
 3. 主文字用深蓝色。蓝色用于推导线和坐标轴，玫红用于结论框和推荐项，绿色用于已确认结构，荧光黄用于极少量关键词，珊瑚粉用于例外或剩余部分。
 4. 框、线、箭头和坐标轴保留轻微手画抖动。关键词高亮只覆盖文字本身。
 5. 禁止圆角卡片、渐变、阴影、照片背景、装饰图标、粗大数字墙和统一商业网格。
@@ -157,7 +157,7 @@ Constraints: no commercial template, no large decorative title, no gradients, no
 使用 neat-annotations：
 - 本地引入 neat-annotations.css。
 - 中文可以直接写入 data-note，例如 data-note="甜点档"。
-- 覆盖 --ann-font 为中文手写字体栈，--ann-label-max-width 设置为 180px 到 240px。
+- 将 --ann-font 固定为 HanziPen SC，--ann-label-max-width 设置为 180px 到 240px。
 - 标注采用绝对定位，因此在目标内容四周预留空间。
 - 重要信息同时写在正文中，标注只做视觉提示。
 

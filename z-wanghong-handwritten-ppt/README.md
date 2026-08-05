@@ -30,7 +30,11 @@
 
 ```bash
 python3 scripts/check_deck.py examples/deepseek-v4-flash/index.html
-scripts/render.sh examples/deepseek-v4-flash/index.html all /tmp/wanghong-ppt-png
+scripts/render.sh \
+  examples/deepseek-v4-flash/index.html \
+  all \
+  /tmp/wanghong-ppt-png \
+  /absolute/path/to/Hanzipen.ttc
 ```
 
-导出需要 macOS 上的 Google Chrome。
+导出需要 macOS 上的 Google Chrome，以及字体册提供的“翩翩体-简”。脚本会锁定使用预览封面的同一字形，字体加载失败时不会继续导出。
