@@ -1,6 +1,6 @@
 ---
 name: z-wanghong-handwritten-ppt
-description: 将文章、讲稿或技术主题制作成王虹学术报告气质的 16:9 Notability 手写风 HTML 幻灯片，并逐页导出 PNG。触发词：王虹PPT风格、王虹手写PPT、Notability学术手写幻灯片、手写网页PPT、手写PPT、数学家手写报告风。
+description: 将文章、讲稿或技术主题制作成王虹学术报告气质的 16:9 Notability 手写风 HTML 幻灯片，逐页导出 PNG，并默认同时生成可逐条播放动画的时间轴版 HTML。触发词：王虹PPT风格、王虹手写PPT、Notability学术手写幻灯片、手写网页PPT、手写PPT、数学家手写报告风、手写PPT时间轴版、手写演示动画。
 ---
 
 # 王虹学术手写风 HTML 幻灯片
@@ -30,7 +30,7 @@ description: 将文章、讲稿或技术主题制作成王虹学术报告气质�
 - 重要数字和结论同时出现在正文，手写标注只承担视觉提示。
 - 支持左右键、空格翻页和全屏。
 - 每页都有简短讲稿备注。
-- 输出 HTML、全部 PNG 和一张总览图，并实际打开检查。
+- 输出原版 HTML、时间轴版 HTML、全部 PNG 和一张总览图，并实际打开检查。时间轴版默认同目录生成 `index-timeline.html`；用户明确只要某一版时按需输出，不强制问询。
 
 ## 工作流程
 
@@ -150,11 +150,26 @@ macOS 上可先在字体册下载“翩翩体-简”。脚本会把指定字体�
 
 发现问题后修改 HTML，再重新导出。交付前至少完成一次浏览器翻页测试和一次全页总览检查。
 
+### 7. 生成时间轴版（默认同时产出）
+
+使用同一份 HTML 生成可逐条播放动画的演示版：
+
+```bash
+python3 scripts/build_timeline.py \
+  "/absolute/path/to/deck/index.html" \
+  --out "/absolute/path/to/deck/index-timeline.html"
+```
+
+时间轴版把每一页拆成标题、框、箭头、文字行、图表等步骤，按空格或点击只出现下一步，可开启自动连播，效果接近 Office PPT，直接在浏览器中演示。它与原版共用同一份视觉，不改文字和排版。
+
+默认同时交付原版和时间轴版；用户说“只要原版”或“只要时间轴版”时，按需只输出对应文件。时间轴版是内联的单文件，不依赖原 HTML 的 assets 相对路径，可以单独移动或发送。
+
 ## 输出目录建议
 
 ```text
 output/<主题>-handwritten-ppt/
   index.html
+  index-timeline.html
   style.css
   assets/
   png/
@@ -166,7 +181,10 @@ output/<主题>-handwritten-ppt/
 
 - `templates/deck.html`：可直接改写的基础模板
 - `assets/template.css`：通用手写风样式
+- `assets/timeline.css`：时间轴版动画与控制条样式
+- `assets/timeline.js`：时间轴版逐条播放运行时
 - `examples/deepseek-v4-flash/`：19 页完整示例
 - `references/style-guide.md`：风格拆解、GPT Image 提示词和 HTML 提示词
 - `scripts/check_deck.py`：结构检查
+- `scripts/build_timeline.py`：生成时间轴版单文件 HTML
 - `scripts/render.sh`：逐页 PNG 导出

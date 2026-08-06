@@ -1,3 +1,5 @@
 .DS_Store
 __pycache__/
 *.pyc
+# 时间轴版独立目录，仅保留在本地，不推送
+z-wanghong-handwritten-timeline/
